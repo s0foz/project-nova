@@ -1,0 +1,92 @@
+# .github/workflows/lint.yml
+#
+# Project:Nova — lightweight lint workflow.
+#
+# Runs on every pull request (and on push to main/master) on Ubuntu to give
+# fast feedback about formatting and vet issues before the heavier Windows
+# build kicks in. golangci-lint is optional and runs with continue-on-error so
+# a new linter release doesn't block merges.
+
+name: Lint
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lint-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: go vet + gofmt + golangci-lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go 1.22
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: true
+
+      - name: Download module dependencies
+        run: go mod download
+
+      # --- go vet ----------------------------------------------------------
+      - name: go vet
+        run: go vet ./...
+
+      # --- gofmt (fail if any file needs formatting) -----------------------
+      - name: gofmt
+        shell: bash
+        run: |
+          set -euo pipefail
+          unformatted="$(gofmt -l .)"
+          if [ -n "${unformatted}" ]; then
+            echo "::error::The following files are not gofmt-clean:"
+            echo "${unformatted}"
+            echo "::group::gofmt diff"
+            gofmt -d ${unformatted}
+            echo "::endgroup::"
+            exit 1
+          fi
+          echo "All Go files are gofmt-clean."
+
+      # --- go mod tidy check (ensures go.sum is up to date) ---------------
+      - name: go mod tidy check
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp go.mod go.mod.before
+          cp go.sum go.sum.before
+          go mod tidy
+          if ! diff -q go.mod go.mod.before >/dev/null || ! diff -q go.sum go.sum.before >/dev/null; then
+            echo "::error::go.mod / go.sum are out of date. Run 'go mod tidy' and commit the result."
+            git --no-pager diff -- go.mod go.sum
+            exit 1
+          fi
+          echo "go.mod and go.sum are tidy."
+
+      # --- golangci-lint (best-effort; non-blocking) ----------------------
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.59
+          args: --timeout=5m
+          # Only install, do not fail the job if linter reports issues.
+          only-new-issues: true
+        continue-on-error: true
