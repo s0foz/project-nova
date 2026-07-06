@@ -1,0 +1,54 @@
+# Binaries
+/nova
+/nova.exe
+/nova.msi
+/bin/
+/dist/
+/build/
+
+# Go workspace
+/go.work
+/go.work.sum
+
+# Build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+*.msi
+*.nupkg
+
+# Vendor (optional - uncomment to avoid committing deps)
+# /vendor/
+
+# IDE / editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Local runtime data (models, blobs, logs)
+/models/
+/blobs/
+/.nova/
+*.log
+nova.log
+
+# Environment / secrets
+.env
+.env.local
+*.pem
+*.key
+
+# Packaging temp
+/wix/
+/standalone/
