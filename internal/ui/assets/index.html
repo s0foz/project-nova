@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="theme-color" content="#0d1117" />
+  <meta name="description" content="Project:Nova — local LLM chat. A self-hosted Ollama-compatible desktop companion." />
+  <title>Project:Nova</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%3E%3Cpath%20d='M12%202%20L14%2010%20L22%2012%20L14%2014%20L12%2022%20L10%2014%20L2%2012%20L10%2010%20Z'%20fill='%23f78166'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/assets/styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#message-input">Skip to chat input</a>
+
+  <header class="topbar" role="banner">
+    <div class="topbar-left">
+      <button id="sidebar-toggle" class="icon-button hamburger" type="button" aria-label="Toggle sidebar" aria-expanded="false" aria-controls="sidebar" title="Toggle sidebar">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+      </button>
+      <div class="brand" aria-label="Project:Nova">
+        <svg class="brand-logo" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M12 2 L14 10 L22 12 L14 14 L12 22 L10 14 L2 12 L10 10 Z"/></svg>
+        <span class="brand-name">Project:Nova</span>
+      </div>
+      <span id="version-badge" class="version-badge" aria-live="polite" title="Nova server version">v—</span>
+    </div>
+    <div class="topbar-right">
+      <button id="new-chat" class="button button-ghost" type="button" aria-label="Start a new chat">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <span>New Chat</span>
+      </button>
+      <button id="settings-toggle" class="icon-button" type="button" aria-label="Open settings" aria-expanded="false" aria-controls="settings-panel" title="Settings">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M19.14 12.94a7.49 7.49 0 0 0 .05-.94 7.49 7.49 0 0 0-.05-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7.03 7.03 0 0 0-1.62-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.59.24-1.13.55-1.62.94l-2.39-.96a.5.5 0 0 0-.61.22L2.7 9.84a.5.5 0 0 0 .12.64l2.03 1.58a7.49 7.49 0 0 0 0 1.88l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.14.24.42.34.68.22l2.39-.96c.5.39 1.03.7 1.62.94l.36 2.54c.05.24.26.42.5.42h3.84c.24 0 .45-.18.5-.42l.36-2.54c.59-.24 1.13-.55 1.62-.94l2.39.96c.26.12.54.02.68-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7Z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="app-body">
+    <aside id="sidebar" class="sidebar" role="complementary" aria-label="Models and settings">
+      <div class="sidebar-section sidebar-models">
+        <label for="model-select" class="sidebar-label">Active model</label>
+        <div class="model-select-row">
+          <select id="model-select" class="select" aria-label="Select active model">
+            <option value="">Loading models…</option>
+          </select>
+          <button id="refresh-models" class="icon-button" type="button" aria-label="Refresh models list" title="Refresh models">
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M17.65 6.35A7.958 7.958 0 0 0 12 4a8 8 0 1 0 7.74 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35Z"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="sidebar-section sidebar-installed">
+        <div class="sidebar-label">
+          <span>Installed models</span>
+          <span id="installed-count" class="muted-count" aria-live="polite">0</span>
+        </div>
+        <ul id="model-list" class="model-list" aria-label="Installed models">
+          <li class="muted-small">No models loaded.</li>
+        </ul>
+      </div>
+
+      <details class="sidebar-section sidebar-system" id="system-prompt-details">
+        <summary class="sidebar-label clickable">System prompt</summary>
+        <textarea id="system-prompt" class="textarea textarea-small" placeholder="You are a helpful assistant." aria-label="System prompt" rows="4"></textarea>
+      </details>
+
+      <div class="sidebar-footer">
+        <span class="muted-small">Served locally by Nova.</span>
+      </div>
+    </aside>
+
+    <div id="sidebar-backdrop" class="sidebar-backdrop" hidden></div>
+
+    <main class="main" role="main">
+      <section id="messages" class="messages" aria-label="Conversation" aria-live="polite" aria-atomic="false">
+        <!-- Messages rendered by app.js -->
+      </section>
+
+      <section id="settings-panel" class="settings-panel" hidden aria-label="Settings">
+        <div class="settings-row">
+          <label for="temperature" class="settings-label">Temperature — <span id="temperature-value">0.8</span></label>
+          <input id="temperature" type="range" min="0" max="2" step="0.05" value="0.8" class="range" aria-label="Temperature" />
+        </div>
+        <div class="settings-row settings-actions">
+          <button id="clear-chat" class="button button-danger-ghost" type="button">Clear chat</button>
+          <button id="close-settings" class="button button-ghost" type="button">Close</button>
+        </div>
+      </section>
+
+      <form id="composer" class="composer" autocomplete="off">
+        <div class="composer-row">
+          <button id="attach-button" class="icon-button composer-attach" type="button" aria-label="Attach an image" title="Attach an image (coming soon)" disabled>
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M16.5 6v11.5a4 4 0 1 1-8 0V5a2.5 2.5 0 0 1 5 0v10.5a1 1 0 1 1-2 0V6H10v9.5a2.5 2.5 0 0 0 5 0V5a4 4 0 1 0-8 0v12.5a5.5 5.5 0 0 0 11 0V6h-1.5Z"/></svg>
+          </button>
+          <input id="file-input" type="file" accept="image/*" hidden aria-hidden="true" />
+          <label for="message-input" class="visually-hidden">Message</label>
+          <textarea id="message-input" class="composer-input" rows="1" placeholder="Send a message…  (Enter to send, Shift+Enter for newline)" aria-label="Message input"></textarea>
+          <button id="send-button" class="button button-primary composer-send" type="submit" aria-label="Send message">
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+            <span class="send-label">Send</span>
+          </button>
+          <button id="stop-button" class="button button-danger composer-stop" type="button" hidden aria-label="Stop generating">
+            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/></svg>
+            <span>Stop</span>
+          </button>
+        </div>
+        <div class="composer-hint" id="composer-hint">
+          <span id="status-line" class="muted-small">Ready.</span>
+        </div>
+      </form>
+    </main>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <script type="module" src="/assets/app.js"></script>
+</body>
+</html>
